@@ -6,14 +6,39 @@ use embassy_executor::Spawner;
 use embassy_stm32::gpio::{Level, Output, Speed};
 use embassy_stm32::mode::Blocking;
 use embassy_stm32::peripherals::QUADSPI;
-use embassy_stm32::qspi::Qspi;
-use embassy_stm32::qspi::enums::{MemorySize, AddressSize, FIFOThresholdLevel, ChipSelectHighTime};
+use embassy_stm32::qspi::{Qspi, TransferConfig};
+use embassy_stm32::qspi::enums::{MemorySize, AddressSize, FIFOThresholdLevel, ChipSelectHighTime, QspiWidth, DummyCycles};
 use embassy_time::Timer;
 use {defmt_rtt as _, panic_probe as _};
 
+// pub struct TransferConfig {
+//     /// Instruction width (IMODE)
+//     pub iwidth: QspiWidth,
+//     /// Address width (ADMODE)
+//     pub awidth: QspiWidth,
+//     /// Data width (DMODE)
+//     pub dwidth: QspiWidth,
+//     /// Instruction Id
+//     pub instruction: u8,
+//     /// Flash memory address
+//     pub address: Option<u32>,
+//     /// Number of dummy cycles (DCYC)
+//     pub dummy: DummyCycles,
+// }
+const W25QXX_EXIT_QSPI_MODE: u8 = 0xFF;
+
 fn w25qxx_exit_qspi_mode(qspi: &mut Qspi<QUADSPI, Blocking>) {
-    qspi.write_enable().unwrap();
-    qspi.command(0xF5, &[], &mut []).unwrap();
+    let transaction = TransferConfig {
+        iwidth: QspiWidth::QUAD,
+        awidth: QspiWidth::NONE,
+        dwidth: QspiWidth::NONE,
+        instruction: W25QXX_EXIT_QSPI_MODE,
+        address: None,
+        dummy: DummyCycles::_0,
+    };
+    qspi.blocking_command(transaction);
+    // qspi.write_enable().unwrap();
+    // qspi.command(0xF5, &[], &mut []).unwrap();
 }
 
 
