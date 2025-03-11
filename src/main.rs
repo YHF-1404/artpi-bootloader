@@ -304,7 +304,7 @@ async fn main(_spawner: Spawner) {
     let mut led1 = Output::new(p.PI8, Level::High, Speed::Low);
     // let ext_flash = embassy_stm32::qspi::Flash::new(qspi);
     // let dma = embassy_stm32::dma::NoDma;
-    let config = embassy_stm32::qspi::Config::{
+    let config = embassy_stm32::qspi::Config{
     /// Flash memory size representend as 2^[0-32], as reasonable minimum 1KiB(9) was chosen.
     /// If you need other value the whose predefined use `Other` variant.
         memory_size: MemorySize::_8MiB,
@@ -317,7 +317,7 @@ async fn main(_spawner: Spawner) {
     /// Minimum number of cycles that chip select must be high between issued commands
         cs_high_time: ChipSelectHighTime::_5Cycle,
     };
-    let qspi = Qspi::new_blocking_bank1(p.QUADSPI, p.PF8, p.PF9, p.PF7, p.PF6, p.PF10, p.PG6, config);
+    let mut qspi = Qspi::new_blocking_bank1(p.QUADSPI, p.PF8, p.PF9, p.PF7, p.PF6, p.PF10, p.PG6, config);
 
     let mut is_qpi_mode = false; // 跟踪当前模式
     w25qxx_exit_qspi_mode(&mut qspi);
