@@ -1,5 +1,5 @@
 [target.thumbv7em-none-eabihf]
-runner = "probe-rs run --chip STM32H750XBH --protocol swd"
+runner = "probe-rs run --chip STM32H750XBHx --protocol swd"
 
 [build]
 target = "thumbv7em-none-eabihf" # Cortex-M4F and Cortex-M7F (with FPU)

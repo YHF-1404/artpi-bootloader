@@ -1,15 +1,29 @@
 #![no_std]
 #![no_main]
 
-use defmt::*;
+// use cortex_m::delay;
+// use cortex_m::prelude::_embedded_hal_blocking_delay_DelayMs;
+// use defmt::*;
 use embassy_executor::Spawner;
+use embassy_stm32::time::Hertz;
+use embassy_stm32::Config;
 use embassy_stm32::gpio::{Level, Output, Speed};
 use embassy_stm32::mode::Blocking;
 use embassy_stm32::peripherals::QUADSPI;
 use embassy_stm32::qspi::{Qspi, TransferConfig};
 use embassy_stm32::qspi::enums::{MemorySize, AddressSize, FIFOThresholdLevel, ChipSelectHighTime, QspiWidth, DummyCycles};
+// use embassy_time::Delay;
 use embassy_time::Timer;
-use {defmt_rtt as _, panic_probe as _};
+// use embassy_time::*;
+
+use core::cell::RefCell;
+use cortex_m_rt::{entry, exception};
+#[cfg(feature = "defmt")]
+use defmt_rtt as _;
+
+use embassy_boot_stm32::*;
+use embassy_stm32::flash::{Flash, BANK1_REGION};
+use embassy_sync::blocking_mutex::Mutex;
 
 // pub struct TransferConfig {
 //     /// Instruction width (IMODE)
@@ -297,46 +311,102 @@ fn w25q_memory_mapped_enable(qspi: &mut Qspi<QUADSPI, Blocking>, is_qpi_mode: bo
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
+// fn main() -> !{
+
+    // let mut config = Config::default();
+    // {
+    //     use embassy_stm32::rcc::*;
+    //     config.rcc.hse = Some(Hse {
+    //         freq: Hertz(25_000_000),
+    //         mode: HseMode::Oscillator,
+    //     });
+    //     config.rcc.pll1 = Some(Pll {
+    //         source: PllSource::HSE,
+    //         prediv: PllPreDiv::DIV5,
+    //         mul: PllMul::MUL192,
+    //         divp: Some(PllDiv::DIV2),
+    //         divq: Some(PllDiv::DIV2),
+    //         divr: Some(PllDiv::DIV2),
+    //     });
+    //     config.rcc.sys = Sysclk::PLL1_P; // 480 Mhz
+    //     config.rcc.ahb_pre = AHBPrescaler::DIV2; // 240 Mhz
+    //     config.rcc.apb1_pre = APBPrescaler::DIV2; // 120 Mhz
+    //     config.rcc.apb2_pre = APBPrescaler::DIV2; // 120 Mhz
+    //     config.rcc.apb3_pre = APBPrescaler::DIV2; // 120 Mhz
+    //     config.rcc.apb4_pre = APBPrescaler::DIV2; // 120 Mhz
+    //     config.rcc.voltage_scale = VoltageScale::Scale1;
+    // }
+
+
+    // let p = embassy_stm32::init(config);
+
+    // defmt::info!("Hello World!");
+
     let p = embassy_stm32::init(Default::default());
-    info!("Hello World!");
 
     let mut led = Output::new(p.PC15, Level::High, Speed::Low);
     let mut led1 = Output::new(p.PI8, Level::High, Speed::Low);
-    // let ext_flash = embassy_stm32::qspi::Flash::new(qspi);
-    // let dma = embassy_stm32::dma::NoDma;
-    let config = embassy_stm32::qspi::Config{
-    /// Flash memory size representend as 2^[0-32], as reasonable minimum 1KiB(9) was chosen.
-    /// If you need other value the whose predefined use `Other` variant.
-        memory_size: MemorySize::_8MiB,
-    /// Address size (8/16/24/32-bit)
-        address_size: AddressSize::_24bit,
-    /// Scalar factor for generating CLK [0-255]
-        prescaler: 1,
-    /// Number of bytes to trigger FIFO threshold flag.
-        fifo_threshold: FIFOThresholdLevel::_4Bytes,
-    /// Minimum number of cycles that chip select must be high between issued commands
-        cs_high_time: ChipSelectHighTime::_5Cycle,
-    };
-    let mut qspi = Qspi::new_blocking_bank1(p.QUADSPI, p.PF8, p.PF9, p.PF7, p.PF6, p.PF10, p.PG6, config);
-
-    let mut is_qpi_mode = false; // 跟踪当前模式
-    w25qxx_exit_qspi_mode(&mut qspi);
-    is_qpi_mode = false;
-    w25qxx_reset(&mut qspi, is_qpi_mode);
-    is_qpi_mode = false;
-    w25qxx_enter_qspi_mode(&mut qspi);
-    is_qpi_mode = true;
-    w25q_memory_mapped_enable(&mut qspi, is_qpi_mode);
     loop {
-        info!("high");
+        defmt::info!("high");
         led.set_high();
         led1.set_high();
-        Timer::after_millis(500).await;
+        // Timer::after_millis(500).await;
 
-        info!("low");
+        defmt::info!("low");
         led.set_low();
         led1.set_low();
         Timer::after_millis(500).await;
     }
+
+    // let config = embassy_stm32::qspi::Config{
+    //     memory_size: MemorySize::_8MiB,
+    //     address_size: AddressSize::_24bit,
+    //     prescaler: 1,
+    //     fifo_threshold: FIFOThresholdLevel::_4Bytes,
+    //     cs_high_time: ChipSelectHighTime::_5Cycle,
+    // };
+    // let mut qspi = Qspi::new_blocking_bank1(p.QUADSPI, p.PF8, p.PF9, p.PF7, p.PF6, p.PF10, p.PG6, config);
+
+    // let mut is_qpi_mode = false; // 跟踪当前模式
+    // w25qxx_exit_qspi_mode(&mut qspi);
+    // is_qpi_mode = false;
+    // w25qxx_reset(&mut qspi, is_qpi_mode);
+    // // is_qpi_mode = false;
+    // w25qxx_enter_qspi_mode(&mut qspi);
+    // is_qpi_mode = true;
+    // w25q_memory_mapped_enable(&mut qspi, is_qpi_mode);
+
+    // // === 启动bootloader逻辑 ===
+    // let layout = Flash::new_blocking(p.FLASH).into_blocking_regions();
+    // let flash = Mutex::new(RefCell::new(layout.bank1_region));
+
+    // let config = BootLoaderConfig::from_linkerfile_blocking(&flash, &flash, &flash);
+    // let active_offset = config.active.offset();
+    // let bl = BootLoader::prepare::<_, _, _, 2048>(config);
+
+
+
+
+    // // 此时QSPI Flash已映射到内存，可以正确跳转到active固件
+    // unsafe { bl.load(BANK1_REGION.base + active_offset) }
+
 }
 
+// #[unsafe(no_mangle)]
+// #[cfg_attr(target_os = "none", unsafe(link_section = ".HardFault.user"))]
+// unsafe extern "C" fn HardFault() {
+//     cortex_m::peripheral::SCB::sys_reset();
+// }
+
+// #[exception]
+// unsafe fn DefaultHandler(_: i16) -> ! {
+//     const SCB_ICSR: *const u32 = 0xE000_ED04 as *const u32;
+//     let irqn = core::ptr::read_volatile(SCB_ICSR) as u8 as i16 - 16;
+
+//     panic!("DefaultHandler #{:?}", irqn);
+// }
+
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    cortex_m::asm::udf();
+}
