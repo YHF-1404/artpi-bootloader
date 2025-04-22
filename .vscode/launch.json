@@ -1,0 +1,65 @@
+
+
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "name": "Debug STM32H750",
+//             "type": "cortex-debug",
+//             "request": "launch",
+//             "servertype": "openocd",
+//             "cwd": "${workspaceRoot}",
+//             "executable": "${workspaceRoot}/target/thumbv7em-none-eabihf/debug/stm32h750xbh-boot",
+//             "preLaunchCommands": [
+//                 "tbreak main"
+//             ],
+//             "device": "STM32H750xB",
+//             "configFiles": [
+//                 "interface/stlink.cfg",
+//                 "target/stm32h7x.cfg"
+//             ],
+//             "svdFile": "${workspaceRoot}/.vscode/STM32H750x.svd",
+//             "runToEntryPoint": "main",
+//             "postRestartCommands": [
+//                 "break main",
+//                 "continue"
+//             ]
+//         }
+//     ]
+// }
+
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "probe-rs-debug",
+            "request": "launch",
+            "name": "STM32H750 Debug (probe-rs)",
+            "cwd": "${workspaceFolder}",
+            "chip": "STM32H750XBHx",
+            "preLaunchCommands": [
+                "tbreak main"
+            ],
+            "flashingConfig": {
+                "flashingEnabled": true,
+                "resetAfterFlashing": true,
+                "haltAfterReset": true
+            },
+            "coreConfigs": [
+                {
+                    "coreIndex": 0,
+                    "programBinary": "${workspaceFolder}/target/thumbv7em-none-eabihf/debug/stm32h750xbh-boot",
+                    "rttEnabled": true,
+                    "rttChannelFormats": [
+                        {
+                            "channelNumber": 0,
+                            "dataFormat": "String",
+                            "showAscii": true
+                        }
+                    ],
+                    "defmtEnabled": true
+                }
+            ]
+        }
+    ]
+}
