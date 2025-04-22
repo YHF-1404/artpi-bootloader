@@ -3,20 +3,12 @@
 #![no_main]
 
 use defmt::info;
-// use cortex_m::delay;
-// use cortex_m::prelude::_embedded_hal_blocking_delay_DelayMs;
-// use defmt::*;
-// use embassy_executor::Spawner;
 use embassy_stm32::time::Hertz;
 use embassy_stm32::Config;
-// use embassy_stm32::gpio::{Level, Output, Speed};
 use embassy_stm32::mode::Blocking;
 use embassy_stm32::peripherals::QUADSPI;
 use embassy_stm32::qspi::{Qspi, TransferConfig};
 use embassy_stm32::qspi::enums::{MemorySize, AddressSize, FIFOThresholdLevel, ChipSelectHighTime, QspiWidth, DummyCycles};
-// use embassy_time::Delay;
-// use embassy_time::Timer;
-// use embassy_time::*;
 
 use core::cell::RefCell;
 use cortex_m_rt::{entry, exception};
