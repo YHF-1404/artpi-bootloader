@@ -614,12 +614,6 @@ unsafe {
 }
 
 
-// #[unsafe(no_mangle)]
-// #[cfg_attr(target_os = "none", unsafe(link_section = ".HardFault.user"))]
-// unsafe extern "C" fn HardFault() {
-//     cortex_m::peripheral::SCB::sys_reset();
-// }
-
 #[exception]
 unsafe fn DefaultHandler(_: i16) -> ! {
     const SCB_ICSR: *const u32 = 0xE000_ED04 as *const u32;
